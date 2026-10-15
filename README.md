@@ -1,15 +1,24 @@
 # Qlack
 
-To install dependencies:
+Monkeytype's feel, raced live against friends in private rooms.
+
+*Q is the first key on a QWERTY keyboard.*
+
+## Structure
+
+- `engine/`: the typing engine. Pure TypeScript, shared by the server and the browser
+- `server/`: Bun WebSocket server (coming soon)
+- `web/`: Angular client (coming soon)
+
+## Getting started
 
 ```bash
 bun install
 ```
 
-To run:
+Run the engine tests:
 
 ```bash
-bun run index.ts
+cd engine
+bun test
 ```
-
-This project was created using `bun init` in bun v1.3.5. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
