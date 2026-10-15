@@ -1,4 +1,4 @@
-# qlack-server
+# Qlack
 
 To install dependencies:
 
