@@ -1,6 +1,6 @@
 // Methods/functions for game functionality
 
-import type { Keystroke, RaceState, Word } from "./types";
+import type { Keystroke, RaceState, Ruleset, Word } from "./types";
 
 export function initialState(targetWords: string[]): RaceState {
     const s: RaceState = {
@@ -88,4 +88,63 @@ export function applyKey(state: RaceState, keystroke: Keystroke): RaceState {
     }
 
     return s
+}
+
+export function stats(state: RaceState, elapsedMs: number): { netWPM: number, accuracy: number } {
+    // calculate accuracy so far
+    let accuracy;
+    accuracy = state.keystrokesCounted === 0 ?  0 : state.correctKeystrokes / state.keystrokesCounted;
+
+    // Calculate WPM
+    let chars = 0;
+    
+    for (const word of state.words.slice(0, state.wordIndex)){
+        if (word.typed === word.target) chars += word.target.length + 1
+    }
+
+    const last = state.words[state.wordIndex]
+
+    if (last && state.wordIndex === state.words.length - 1 && last.typed === last.target){
+        chars += last.target.length
+    }
+
+    const minutes = elapsedMs / 60000
+    const netWPM = (chars / 5) / minutes
+
+    return { netWPM, accuracy }
+}
+
+// Rulesets for how a game ends
+// Timer ruleset: shouldStop becomes true once the time is up
+export function timerRuleset(durationMs: number): Ruleset {
+    return {
+        shouldStop: (state, t) => (t >= durationMs)
+    }
+}
+
+// passage ruleset: shouldStop becomes true when we're either:
+// - past the last word, or
+// - we're on the last word and it's typed correctly
+export const passageRuleset: Ruleset = {
+    shouldStop: (state, t) => 
+        ((state.wordIndex >= state.words.length) || 
+            (state.wordIndex === state.words.length - 1 
+                && state.words[state.wordIndex]?.typed === state.words[state.wordIndex]?.target))
+}
+
+
+// final piece of the engine: replay. Pieces everything together
+export function replay(words: string[], keystrokes: Keystroke[], ruleset: Ruleset): RaceState {
+    let state = initialState(words);
+
+    for (const k of keystrokes){
+        if (ruleset.shouldStop(state, k.t)){
+            state = {...state, stopped: true}
+            break;
+        }
+        
+        state = applyKey(state, k)
+    }
+
+    return state
 }
