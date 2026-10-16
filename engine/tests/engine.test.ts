@@ -1,6 +1,6 @@
 import { test, expect } from "bun:test";
-import { applyKey, initialState, passageRuleset, replay, stats, timerRuleset } from "./engine";
-import type { Keystroke } from "./types";
+import { applyKey, initialState, passageRuleset, replay, stats, timerRuleset } from "../engine";
+import type { Keystroke } from "../types";
 import { isStatement } from "typescript";
 
 test("types a clean word", () => {
