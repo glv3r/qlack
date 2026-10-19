@@ -2,6 +2,7 @@
   "name": "qlack",
   "private": true,
   "workspaces": [
-    "engine"
+    "engine",
+    "server"
   ]
 }

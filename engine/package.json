@@ -1,5 +1,5 @@
 {
-  "name": "qlack-server",
+  "name": "@qlack/engine",
   "module": "index.ts",
   "type": "module",
   "private": true,
