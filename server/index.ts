@@ -1,6 +1,8 @@
-import type { ClientMessage, ServerMessage } from "./protocol";
+import { broadcast, publish, send } from "./messages";
+import type { ClientMessage } from "./protocol";
 import { rooms, type Player, type Room, type SocketData } from "./rooms";
 import type { ServerWebSocket } from "bun";
+import { handlePong, startSync } from "./sync";
 
 
 const IDLE_MS  = 10 * 60 * 1000 
@@ -17,7 +19,7 @@ setInterval(() => {
     })
 }, SWEEP_MS)
 
-const server = Bun.serve<SocketData>({
+export const server = Bun.serve<SocketData>({
   port: 3000,
   // Makes it reacheable from other machines on the
   // same network
@@ -74,7 +76,10 @@ const server = Bun.serve<SocketData>({
 
         case "start":
             handleStartRace(ws)
-            console.log("Start");
+            break;
+
+        case "pong":
+            handlePong(ws, msg)
             break;
 
         default:
@@ -88,6 +93,18 @@ const server = Bun.serve<SocketData>({
   },
 });
 
+
+
+
+
+
+
+
+
+
+
+
+
 // Helper functions for server
 function roomTopic(code: string) {
   return "Room: " + code;
@@ -99,24 +116,6 @@ function playerMapping(r: Room): {id: string, name: string}[] {
         name: p.name,
     }));
 }
-
-function send(ws: ServerWebSocket<SocketData>, msg: ServerMessage) {
-  // simplifying the send function for ws by explicitly typing msg
-  // to our own ServerMessage type so we don't have to
-  //  write the full thing
-  ws.send(JSON.stringify(msg));
-}
-
-function publish(ws: ServerWebSocket<SocketData>, topic: string, msg: ServerMessage) {
-  // same concept as send
-  ws.publish(topic, JSON.stringify(msg));
-}
-
-function broadcast(ws: ServerWebSocket<SocketData>, topic: string, msg: ServerMessage) {
-  // same concept as send & publish
-  server.publish(topic, JSON.stringify(msg));
-}
-
 
 function generateCode(): string {
   const characters: string = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
@@ -164,7 +163,15 @@ function handleCreateRoom(ws: ServerWebSocket<SocketData>, msg: Extract<ClientMe
     lastActivity: Date.now()
   };
 
-  room.players.set(ws.data.playerId, { id: ws.data.playerId, name: name, ws: ws });
+  const thisPlayer: Player = {
+    id: ws.data.playerId,
+    name: name,
+    ws: ws,
+    pending: new Map(),
+    samples: []
+  }
+
+  room.players.set(ws.data.playerId, thisPlayer);
 
   rooms.set(code, room);
 
@@ -174,6 +181,7 @@ function handleCreateRoom(ws: ServerWebSocket<SocketData>, msg: Extract<ClientMe
   const players = playerMapping(room)
   
   send(ws, { type: "joined", code: code, you: ws.data.playerId, hostId: ws.data.playerId, players: players });
+  startSync(thisPlayer)
 }
 
 function handleJoinRoom(ws: ServerWebSocket<SocketData>, msg: Extract<ClientMessage, { type: "join_room" }>){
@@ -219,11 +227,15 @@ function handleJoinRoom(ws: ServerWebSocket<SocketData>, msg: Extract<ClientMess
     return;
   }
 
-  room.players.set(ws.data.playerId, {
+  const thisPlayer: Player = {
     id: ws.data.playerId,
     name: name,
-    ws: ws
-  })
+    ws: ws,
+    pending: new Map(),
+    samples: []
+  }
+
+  room.players.set(ws.data.playerId, thisPlayer)
 
   ws.data.roomCode = code
   ws.subscribe(roomTopic(code))
@@ -232,6 +244,7 @@ function handleJoinRoom(ws: ServerWebSocket<SocketData>, msg: Extract<ClientMess
 
   send(ws, { type: "joined", code: code, you: ws.data.playerId, hostId: room.hostId, players: players });
   publish(ws, roomTopic(code), { type: "lobby_update", hostId: room.hostId, players: players })
+  startSync(thisPlayer)
 
 }
 

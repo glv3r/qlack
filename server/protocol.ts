@@ -3,7 +3,8 @@ import type { Player } from "./rooms";
 export type ClientMessage = 
     | { type: "create_room", name: string }
     | { type: "join_room", code: string, name: string }
-    | { type: "start" };
+    | { type: "start" }
+    | { type: "pong", id: string, clientTime: number }
 
 
 export type ServerMessage = 
@@ -11,3 +12,4 @@ export type ServerMessage =
     | { type: "lobby_update", hostId: string, players: {id: string, name: string}[] }
     | { type: "error", message: string }
     | { type: "room_closed" }
+    | { type: "ping", id: string }

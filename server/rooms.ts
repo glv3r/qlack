@@ -1,4 +1,3 @@
-import { idText, type Identifier } from "typescript";
 import type { ServerWebSocket } from "bun";
 
 export const rooms = new Map<string, Room>()
@@ -8,10 +7,20 @@ export type SocketData = {
     roomCode?: string
 }
 
+export type Sample = { 
+    rtt: number, 
+    offset: number 
+}
+
 export type Player = {
     id: string,
     name: string,
-    ws: ServerWebSocket<SocketData>
+    ws: ServerWebSocket<SocketData>,
+    // Remember to remove optional for bottom two
+    pending: Map<string, number>,
+    samples: Sample[],
+    window?: number,
+    offset?: number
 }
 
 export type Room = {
@@ -22,4 +31,3 @@ export type Room = {
     lastActivity: number
 }
 
-export type Rooms = Map<string, string>
