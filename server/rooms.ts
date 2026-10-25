@@ -4,7 +4,8 @@ export const rooms = new Map<string, Room>()
 
 export type SocketData = {
     playerId: string,
-    roomCode?: string
+    roomCode?: string,
+    lastRelease: { in: number, out: number }
 }
 
 export type Sample = { 

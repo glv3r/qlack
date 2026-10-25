@@ -3,7 +3,7 @@ import type { ClientMessage } from "./protocol";
 import { rooms, type Player, type Room, type SocketData } from "./rooms";
 import type { ServerWebSocket } from "bun";
 import { handlePong, startSync } from "./sync";
-import { lag } from "./timing";
+import { DROP_ON, lag } from "./timing";
 
 
 const IDLE_MS  = 10 * 60 * 1000 
@@ -29,7 +29,7 @@ export const server = Bun.serve<SocketData>({
   // Evey connection starting out as a normal HTTP request
   fetch(req, server) {
     // switch it to a websocket
-    if (server.upgrade(req, { data: { playerId: crypto.randomUUID() } })) {
+    if (server.upgrade(req, { data: { playerId: crypto.randomUUID(), lastRelease: { in: 0, out: 0 } } })) {
       return;
     } else {
       return new Response("Not a websocket!");
@@ -40,7 +40,7 @@ export const server = Bun.serve<SocketData>({
       console.log("Connected!: ", ws.data.playerId);
     },
     message(ws, raw) {
-      lag(() => handleMessage(ws, raw))
+      lag(ws, "in", () => handleMessage(ws, raw), true)
     },
     close(ws) {
       handleLeaveRoom(ws)
@@ -296,6 +296,7 @@ function handleMessage(ws: ServerWebSocket<SocketData>, raw: string | Buffer<Arr
             break;
 
         case "pong":
+            if (DROP_ON && Math.random() < 0.1) return;
             handlePong(ws, msg)
             break;
 

@@ -9,7 +9,7 @@ export function send(ws: ServerWebSocket<SocketData>, msg: ServerMessage) {
   // simplifying the send function for ws by explicitly typing msg
   // to our own ServerMessage type so we don't have to
   //  write the full thing
-  lag(() => ws.send(JSON.stringify(msg)));
+  lag(ws, "out", () => ws.send(JSON.stringify(msg)), msg.type === "ping");
 }
 
 export function publish(ws: ServerWebSocket<SocketData>, topic: string, msg: ServerMessage) {
