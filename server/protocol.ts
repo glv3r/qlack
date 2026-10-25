@@ -13,3 +13,7 @@ export type ServerMessage =
     | { type: "error", message: string }
     | { type: "room_closed" }
     | { type: "ping", id: string }
+
+export type KeyVerdict =
+  | { ok: true,  time: number, clamped: boolean }
+  | { ok: false, reason: string }

@@ -3,6 +3,7 @@ import type { ClientMessage } from "./protocol";
 import { rooms, type Player, type Room, type SocketData } from "./rooms";
 import type { ServerWebSocket } from "bun";
 import { handlePong, startSync } from "./sync";
+import { lag } from "./timing";
 
 
 const IDLE_MS  = 10 * 60 * 1000 
@@ -39,52 +40,7 @@ export const server = Bun.serve<SocketData>({
       console.log("Connected!: ", ws.data.playerId);
     },
     message(ws, raw) {
-      const senderCode = ws.data.roomCode
-
-      const room = senderCode ? rooms.get(senderCode) : undefined
-
-      if (room) room.lastActivity = Date.now()
-      
-      let data: unknown;
-
-      const rawString =
-        typeof raw === "string" ? raw
-          : new TextDecoder().decode(raw as Buffer<ArrayBuffer>);
-
-      try {
-        data = JSON.parse(rawString);
-      } catch (error) {
-        send(ws, { type: "error", message: "bad json" });
-        return;
-      }
-
-      if (data === null || typeof data !== "object" || !("type" in data) || typeof data.type !== "string") {
-        send(ws, { type: "error", message: "bad message" });
-        return;
-      }
-
-      const msg = data as ClientMessage;
-
-      switch (msg.type) {
-        case "create_room": 
-            handleCreateRoom(ws, msg)
-            break;
-
-        case "join_room":
-            handleJoinRoom(ws, msg)
-            break;
-
-        case "start":
-            handleStartRace(ws)
-            break;
-
-        case "pong":
-            handlePong(ws, msg)
-            break;
-
-        default:
-            send(ws, { type: "error", message: "unknown type" });
-      }
+      lag(() => handleMessage(ws, raw))
     },
     close(ws) {
       handleLeaveRoom(ws)
@@ -168,7 +124,8 @@ function handleCreateRoom(ws: ServerWebSocket<SocketData>, msg: Extract<ClientMe
     name: name,
     ws: ws,
     pending: new Map(),
-    samples: []
+    samples: [],
+    syncAttempts: 0
   }
 
   room.players.set(ws.data.playerId, thisPlayer);
@@ -232,7 +189,8 @@ function handleJoinRoom(ws: ServerWebSocket<SocketData>, msg: Extract<ClientMess
     name: name,
     ws: ws,
     pending: new Map(),
-    samples: []
+    samples: [],
+    syncAttempts: 0
   }
 
   room.players.set(ws.data.playerId, thisPlayer)
@@ -295,6 +253,55 @@ function handleStartRace(ws: ServerWebSocket<SocketData>){
     }
 
     console.log("Race starting for room: " + code)
+}
+
+function handleMessage(ws: ServerWebSocket<SocketData>, raw: string | Buffer<ArrayBuffer>){
+    const senderCode = ws.data.roomCode
+
+      const room = senderCode ? rooms.get(senderCode) : undefined
+
+      if (room) room.lastActivity = Date.now()
+      
+      let data: unknown;
+
+      const rawString =
+        typeof raw === "string" ? raw
+          : new TextDecoder().decode(raw as Buffer<ArrayBuffer>);
+
+      try {
+        data = JSON.parse(rawString);
+      } catch (error) {
+        send(ws, { type: "error", message: "bad json" });
+        return;
+      }
+
+      if (data === null || typeof data !== "object" || !("type" in data) || typeof data.type !== "string") {
+        send(ws, { type: "error", message: "bad message" });
+        return;
+      }
+
+      const msg = data as ClientMessage;
+
+      switch (msg.type) {
+        case "create_room": 
+            handleCreateRoom(ws, msg)
+            break;
+
+        case "join_room":
+            handleJoinRoom(ws, msg)
+            break;
+
+        case "start":
+            handleStartRace(ws)
+            break;
+
+        case "pong":
+            handlePong(ws, msg)
+            break;
+
+        default:
+            send(ws, { type: "error", message: "unknown type" });
+      }
 }
 
 function closeRoom(code: string, room: Room){

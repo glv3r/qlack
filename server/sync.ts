@@ -1,3 +1,14 @@
+// We calculate each player's offset and window for error here,
+// and initially we were just syncing with 6 samples strictly, but
+// some decisions were made later on because we should only need about 3
+// samples to make a good calculation of a player's offset and window and the likes
+// and because of connection issues a player can have, they might not get to the
+// 6 samples and they'll drop off. So instead we add a deadline instead of a count, 
+// so a player can try up to 3 times to sync and get 3+ samples for us to make the window
+// calculations. That way, anyone who can't make 3/6 in 3 tries is just dropped off
+
+
+
 import { send } from "./messages";
 import type { ClientMessage, ServerMessage } from "./protocol";
 import { rooms, type Player, type SocketData } from "./rooms";
@@ -17,6 +28,8 @@ export function startSync(player: Player){
                 send(player.ws, { type: "ping", id: id })
             }, i * 100)
         }
+
+        setTimeout(() => finishSync(player), 1500)
     }
 }
 
@@ -44,32 +57,45 @@ export function handlePong(ws: ServerWebSocket<SocketData>, msg: Extract<ClientM
     const rtt = now - sentAt
     const offset = msg.clientTime - (sentAt + rtt / 2)
     player.samples.push({ rtt, offset })
+}
 
-    if (player.samples.length === 6) {
-        // Sample with the smallet rtt
-        const best = player.samples.reduce((min, sample) => 
-            sample.rtt < min.rtt ? sample : min)
+export function finishSync(player: Player){
+    if (player.ws.readyState !== 1) return;
 
-        const offset = best.offset
+    player.pending = new Map()
 
-        // Find median of rtt's and divide by 2
-        const rtts = player.samples.map(i => i.rtt)
-        const oneWay = getMedian(rtts) / 2
-        const jitter = getStandardDeviation(rtts)
-
-        const window = clamp(oneWay + 3 * jitter, 150, 500)
-        player.offset = offset
-        player.window = window
-
-        console.log("Final offset: " + offset)
-        console.log("Window: " + window)
+    if (player.samples.length < 3){
+        if (player.syncAttempts < 3){
+            player.syncAttempts++
+            startSync(player)
+            return;
+        } else {
+            console.log("Sync failed.")
+            return;
+        }
     }
+
+    // Sample with the smallet rtt
+    const best = player.samples.reduce((min, sample) => 
+        sample.rtt < min.rtt ? sample : min)
+
+    const offsetBest = best.offset
+
+    // Find median of rtt's and divide by 2
+    const rtts = player.samples.map(i => i.rtt)
+    const oneWay = getMedian(rtts) / 2
+    const jitter = getStandardDeviation(rtts)
+    const window = clamp(oneWay + 3 * jitter, 150, 500)
+    
+    player.sync = { offset: offsetBest, window: window, errorBound: best.rtt / 2 }
+    player.syncAttempts = 0;
+    console.log("Final offset: " + offsetBest)
+    console.log("Window: " + window)
 }
 
 
 
 
-// Make this general later
 function getMedian(arr: number[]): number{
     // ascending order (sorting a copy, not the original)
     const sorted = [...arr].sort((a, b) => a - b)

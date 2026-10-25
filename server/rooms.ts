@@ -12,6 +12,12 @@ export type Sample = {
     offset: number 
 }
 
+export type ClockSync = {
+    offset: number,
+    window: number, 
+    errorBound: number,
+}
+
 export type Player = {
     id: string,
     name: string,
@@ -19,8 +25,8 @@ export type Player = {
     // Remember to remove optional for bottom two
     pending: Map<string, number>,
     samples: Sample[],
-    window?: number,
-    offset?: number
+    sync?: ClockSync,
+    syncAttempts: number
 }
 
 export type Room = {
