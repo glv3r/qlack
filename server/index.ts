@@ -1,16 +1,14 @@
 import { broadcast, publish, send } from "./messages";
 import type { ClientMessage } from "./protocol";
-import { rooms, type Player, type Room, type SocketData } from "./rooms";
+import { rooms, type Player, type Room, type SocketData } from "./lobby/rooms";
 import type { ServerWebSocket } from "bun";
-import { handlePong, startSync } from "./sync";
-import { DROP_ON, lag } from "./timing";
+import { handlePong, startSync } from "./lobby/sync";
+import { DROP_ON, lag } from "./lobby/timing";
+import { handleKeys, handleStartRace } from "./race";
 
 
 const IDLE_MS  = 10 * 60 * 1000 
 const SWEEP_MS = 60 * 1000
-
-// const IDLE_MS  = 10000
-// const SWEEP_MS = 2000
 
 setInterval(() => {
     rooms.forEach((room, code) => {
@@ -40,7 +38,7 @@ export const server = Bun.serve<SocketData>({
       console.log("Connected!: ", ws.data.playerId);
     },
     message(ws, raw) {
-      lag(ws, "in", () => handleMessage(ws, raw), true)
+      lag(ws, "in", () => handleMessage(ws, raw), false)
     },
     close(ws) {
       handleLeaveRoom(ws)
@@ -62,7 +60,7 @@ export const server = Bun.serve<SocketData>({
 
 
 // Helper functions for server
-function roomTopic(code: string) {
+export function roomTopic(code: string) {
   return "Room: " + code;
 }
 
@@ -125,7 +123,9 @@ function handleCreateRoom(ws: ServerWebSocket<SocketData>, msg: Extract<ClientMe
     ws: ws,
     pending: new Map(),
     samples: [],
-    syncAttempts: 0
+    syncAttempts: 0,
+    keystrokes: [],
+    lastTime: 0
   }
 
   room.players.set(ws.data.playerId, thisPlayer);
@@ -190,7 +190,9 @@ function handleJoinRoom(ws: ServerWebSocket<SocketData>, msg: Extract<ClientMess
     ws: ws,
     pending: new Map(),
     samples: [],
-    syncAttempts: 0
+    syncAttempts: 0,
+    keystrokes: [],
+    lastTime: 0
   }
 
   room.players.set(ws.data.playerId, thisPlayer)
@@ -218,7 +220,7 @@ function handleLeaveRoom(ws: ServerWebSocket<SocketData>){
     room.players.delete(ws.data.playerId)
 
     if (room.players.size === 0) {
-        rooms.delete(code)
+        closeRoom(room.code, room)
         return;
     }
 
@@ -229,31 +231,9 @@ function handleLeaveRoom(ws: ServerWebSocket<SocketData>){
     }
 
     const players = playerMapping(room)
-    broadcast(ws, roomTopic(code), { type: "lobby_update", hostId: room.hostId, players: players })
+    broadcast(roomTopic(code), { type: "lobby_update", hostId: room.hostId, players: players })
 }
 
-function handleStartRace(ws: ServerWebSocket<SocketData>){
-    const code = ws.data.roomCode
-    if (!code) { 
-        send(ws, { type: "error", message: "You're not in a room" });
-        return;
-    }
-
-    const room = rooms.get(code)
-    if (!room) return;
-
-    if (ws.data.playerId !== room.hostId) {
-        send(ws, { type: "error", message: "Only hosts are allowed to start the game." });
-        return;
-    }
-
-    if (room.phase !== "lobby"){
-        send(ws, { type: "error", message: "Race already started!" });
-        return;
-    }
-
-    console.log("Race starting for room: " + code)
-}
 
 function handleMessage(ws: ServerWebSocket<SocketData>, raw: string | Buffer<ArrayBuffer>){
     const senderCode = ws.data.roomCode
@@ -292,12 +272,16 @@ function handleMessage(ws: ServerWebSocket<SocketData>, raw: string | Buffer<Arr
             break;
 
         case "start":
-            handleStartRace(ws)
+            handleStartRace(ws, msg)
             break;
 
         case "pong":
             if (DROP_ON && Math.random() < 0.1) return;
             handlePong(ws, msg)
+            break;
+
+        case "keys":
+            handleKeys(ws, msg);
             break;
 
         default:
@@ -306,6 +290,8 @@ function handleMessage(ws: ServerWebSocket<SocketData>, raw: string | Buffer<Arr
 }
 
 function closeRoom(code: string, room: Room){
+  clearInterval(room.tick)
+
     for (const player of room.players.values()){
         send(player.ws, { type: "room_closed" })
         player.ws.data.roomCode = undefined

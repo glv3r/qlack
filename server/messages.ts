@@ -1,8 +1,8 @@
 import type { ServerWebSocket } from "bun";
-import type { SocketData } from "./rooms";
+import type { SocketData } from "./lobby/rooms";
 import type { ServerMessage } from "./protocol";
 import { server } from ".";
-import { lag } from "./timing";
+import { lag } from "./lobby/timing";
 
 
 export function send(ws: ServerWebSocket<SocketData>, msg: ServerMessage) {
@@ -17,7 +17,7 @@ export function publish(ws: ServerWebSocket<SocketData>, topic: string, msg: Ser
   ws.publish(topic, JSON.stringify(msg));
 }
 
-export function broadcast(ws: ServerWebSocket<SocketData>, topic: string, msg: ServerMessage) {
+export function broadcast(topic: string, msg: ServerMessage) {
   // same concept as send & publish
   server.publish(topic, JSON.stringify(msg));
 }

@@ -9,9 +9,9 @@
 
 
 
-import { send } from "./messages";
-import type { ClientMessage, ServerMessage } from "./protocol";
-import { rooms, type Player, type SocketData } from "./rooms";
+import { send } from "../messages";
+import type { ClientMessage, ServerMessage } from "../protocol";
+import { rooms, type Player, type SocketData } from "../lobby/rooms";
 import type { ServerWebSocket } from "bun";
 
 export function startSync(player: Player){

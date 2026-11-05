@@ -1,4 +1,4 @@
-import type { KeyVerdict } from "./protocol";
+import type { KeyVerdict } from "../protocol";
 import type { ClockSync, Player, SocketData } from "./rooms";
 import type { ServerWebSocket } from "bun";
 
@@ -31,7 +31,7 @@ function getRandomInt(min: number, max: number): number {
 
 export function lag(ws: ServerWebSocket<SocketData>, direction: "in" | "out", fn: () => void, droppable: boolean){
     const now = performance.now()
-    const release = Math.max(now + getRandomInt(20, 200), ws.data.lastRelease[direction])
+    const release = Math.max(now + getRandomInt(20, 200), ws.data.lastRelease[direction] + 1)
     ws.data.lastRelease[direction] = release
 
     if (!LAG_ON) {
@@ -39,9 +39,7 @@ export function lag(ws: ServerWebSocket<SocketData>, direction: "in" | "out", fn
         return;
     }
 
-    if (droppable){
-        if (Math.random() < 0.1) return;
-    }
+    if (DROP_ON && droppable && Math.random() < 0.1) return;
 
     setTimeout(fn, release - now)
 }

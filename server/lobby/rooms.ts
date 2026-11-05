@@ -1,4 +1,6 @@
 import type { ServerWebSocket } from "bun";
+import type { RaceMode } from "../protocol";
+import type { Keystroke, RaceState } from "@qlack/engine";
 
 export const rooms = new Map<string, Room>()
 
@@ -27,14 +29,22 @@ export type Player = {
     pending: Map<string, number>,
     samples: Sample[],
     sync?: ClockSync,
-    syncAttempts: number
+    keystrokes: Keystroke[],
+    lastTime: number,
+    syncAttempts: number,
+    state?: RaceState
 }
 
 export type Room = {
     code: string
-    phase: "lobby",
+    phase: "lobby" | "countdown" | "racing" | "results",
+    mode?: RaceMode,
+    seed?: number,
+    startAt?: number,
     hostId: string,
     players: Map<string, Player>,
-    lastActivity: number
+    lastActivity: number,
+    words?: string[],
+    tick?: ReturnType<typeof setInterval>
 }
 
