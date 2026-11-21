@@ -32,7 +32,8 @@ export type Player = {
     keystrokes: Keystroke[],
     lastTime: number,
     syncAttempts: number,
-    state?: RaceState
+    state?: RaceState,
+    finishedAt?: number
 }
 
 export type Room = {
@@ -45,6 +46,7 @@ export type Room = {
     players: Map<string, Player>,
     lastActivity: number,
     words?: string[],
-    tick?: ReturnType<typeof setInterval>
+    tick?: Timer
+    endTimer?: Timer
 }
 

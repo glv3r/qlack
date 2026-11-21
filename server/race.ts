@@ -1,9 +1,9 @@
 import { broadcast, send } from "./messages";
-import { type SocketData, rooms } from "./lobby/rooms";
+import { type Room, type SocketData, rooms } from "./lobby/rooms";
 import type { ServerWebSocket } from "bun";
 import type { ClientMessage, RaceMode } from "./protocol";
 import { checkKey } from "./lobby/timing";
-import { applyKey, generateWords, initialState, stats, type Keystroke } from "@qlack/engine";
+import { applyKey, generateWords, initialState, passageRuleset, stats, type Keystroke } from "@qlack/engine";
 import { roomTopic } from ".";
 
 
@@ -59,9 +59,12 @@ export function handleStartRace(ws: ServerWebSocket<SocketData>, msg: Extract<Cl
             startAt: startAt + p.sync!.offset}) 
         p.keystrokes = []
         p.lastTime = startAt
+        p.finishedAt = undefined
         // words is definitely generated so we can have the null bypass here
         p.state = initialState(room.words!) 
     });
+
+    console.log("Words: ", room.words.join(" "))
 
 
 
@@ -69,6 +72,10 @@ export function handleStartRace(ws: ServerWebSocket<SocketData>, msg: Extract<Cl
         if (rooms.get(code) !== room || room.phase !== "countdown") return;
         console.log("Counting down...")
         room.phase = "racing"
+
+        if (mode.kind === "timer"){
+            room.endTimer = setTimeout(() => endRace(room, code), mode.duration * 1000 + 500)
+        }
 
         let ticks = 0
 
@@ -79,7 +86,7 @@ export function handleStartRace(ws: ServerWebSocket<SocketData>, msg: Extract<Cl
                 cts.push({ id: p.id, wordIndex: p.state.wordIndex, charIndex: p.state.words[p.state.wordIndex]?.typed.length ?? 0})
             })
 
-            broadcast(roomTopic(code), { type: "carets", carets: cts })
+            // broadcast(roomTopic(code), { type: "carets", carets: cts })
             ticks++;
             if (ticks % 10 !== 0) return;
 
@@ -118,6 +125,8 @@ export function handleKeys(ws: ServerWebSocket<SocketData>, msg: Extract<ClientM
 
     const player = room.players.get(ws.data.playerId)
 
+    if (player?.finishedAt !== undefined) return;
+
     if (room.phase !== "racing") return;
 
     if (!player?.sync) return;
@@ -142,9 +151,24 @@ export function handleKeys(ws: ServerWebSocket<SocketData>, msg: Extract<ClientM
         if (verdict.ok) {
             const key = { ...stroke, t: verdict.time - startAt }
             player.keystrokes.push(key)
-            player.state = applyKey(player.state, key)
-            console.log(player.state.wordIndex, player.state.words[player.state.wordIndex]?.typed)
             player.lastTime = verdict.time
+            player.state = applyKey(player.state, key)
+
+            if (room.mode?.kind === "passage" && passageRuleset.shouldStop(player.state, key.t)){
+                player.finishedAt = key.t
+
+                if (!room.endTimer) room.endTimer = setTimeout(() => endRace(room, code), 30000)
+
+                // Checking if every player has finishedAt (it's not undefined)
+                if([...room.players.values()].every((p) => p.finishedAt !== undefined)){
+                    endRace(room, code)
+                }
+
+                return;
+            }
+
+            console.log(player.state.wordIndex, player.state.words[player.state.wordIndex]?.typed)
+            
             console.log("ok", stroke.kind, Math.round(verdict.time - startAt), verdict.clamped ? "clamped" : "");
         } else {
             console.log(verdict.reason) // Deliberately left blank for now
@@ -174,4 +198,17 @@ function toKeystroke(key: string): { kind: "char", char: string} | { kind: "spac
     } else {
         return null;
     }
+}
+
+export function endRace(room: Room, code: string){
+    if (room.phase !== "racing") return;
+
+    room.phase = "results"
+    clearInterval(room.tick)
+    clearTimeout(room.endTimer) 
+
+    room.endTimer = undefined
+    room.tick = undefined
+
+    console.log("Race ended", code)
 }
