@@ -3,8 +3,9 @@ import { type Room, type SocketData, rooms } from "./lobby/rooms";
 import type { ServerWebSocket } from "bun";
 import type { ClientMessage, RaceMode } from "./protocol";
 import { checkKey } from "./lobby/timing";
-import { applyKey, generateWords, initialState, passageRuleset, stats, type Keystroke } from "@qlack/engine";
-import { roomTopic } from ".";
+import { applyKey, generateWords, initialState, passageRuleset, replay, stats, timerRuleset, type Keystroke } from "@qlack/engine";
+import { playerMapping, roomTopic } from ".";
+import { startSync } from "./lobby/sync";
 
 
 export function handleStartRace(ws: ServerWebSocket<SocketData>, msg: Extract<ClientMessage, { type: "start" }>){
@@ -211,4 +212,76 @@ export function endRace(room: Room, code: string){
     room.tick = undefined
 
     console.log("Race ended", code)
+
+    const ruleset = room.mode?.kind === "timer" ? timerRuleset(room.mode.duration * 1000) : passageRuleset
+    const now = performance.now()
+
+    const rows: { name: string, wpm: number, accuracy: number }[]  = []
+    
+    const words = room.words
+    const startAt = room.startAt
+    const mode = room.mode
+
+
+    if (!words || startAt === undefined || !mode) return
+
+    Array.from(room.players.values()).forEach(p => {
+        const final = replay(words, p.keystrokes, ruleset)
+        const elapsed = mode.kind === "timer" ? 
+            mode.duration * 1000 : 
+            (p.finishedAt ?? now - startAt) 
+
+        const s = stats(final, elapsed)
+        const row = { name: p.name, wpm: s.netWPM, accuracy: s.accuracy }
+        rows.push(row)
+    })
+
+    // Sort rows by wpm in desc. order
+    rows.sort((a, b) => b.wpm - a.wpm)
+    const updatedRows = rows.map((r, index) => ({
+        ...r,
+        rank: index + 1
+    }))
+
+    broadcast(roomTopic(code), { type: "results", results: updatedRows })
+}
+
+export function handleRematch(ws: ServerWebSocket<SocketData>, msg: Extract<ClientMessage, { type: "rematch" }>){
+    const code = ws.data.roomCode
+
+    if (!code) { 
+        send(ws, { type: "error", message: "You're not in a room" });
+        return;
+    }
+
+    const room = rooms.get(code)
+    if (!room) {
+        send(ws, { type: "error", message: "Room doesn't exist" });
+        return
+    };
+
+    if (ws.data.playerId !== room.hostId) {
+        send(ws, { type: "error", message: "Only hosts are allowed to rematch." });
+        return;
+    }
+
+    if (room.phase !== "results"){
+        send(ws, { type: "error", message: "Game should finish before restart can happen" });
+        return;
+    }
+
+    room.phase = "lobby"
+    room.mode = undefined
+    room.seed = undefined
+    room.startAt = undefined
+    room.words = undefined
+
+    const players = playerMapping(room)
+
+    // Fresh offsets each round
+    room.players.forEach(p => {
+        startSync(p)
+    })
+
+    broadcast(roomTopic(code), { type: "lobby_update", hostId: room.hostId, players: players })
 }

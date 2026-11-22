@@ -4,7 +4,7 @@ import { rooms, type Player, type Room, type SocketData } from "./lobby/rooms";
 import type { ServerWebSocket } from "bun";
 import { handlePong, startSync } from "./lobby/sync";
 import { DROP_ON, lag } from "./lobby/timing";
-import { handleKeys, handleStartRace } from "./race";
+import { handleKeys, handleRematch, handleStartRace } from "./race";
 
 
 const IDLE_MS  = 10 * 60 * 1000 
@@ -64,7 +64,7 @@ export function roomTopic(code: string) {
   return "Room: " + code;
 }
 
-function playerMapping(r: Room): {id: string, name: string}[] {
+export function playerMapping(r: Room): {id: string, name: string}[] {
     return [...r.players.values()].map((p) => ({
         id: p.id,
         name: p.name,
@@ -282,6 +282,10 @@ function handleMessage(ws: ServerWebSocket<SocketData>, raw: string | Buffer<Arr
 
         case "keys":
             handleKeys(ws, msg);
+            break;
+
+        case "rematch":
+            handleRematch(ws, msg);
             break;
 
         default:

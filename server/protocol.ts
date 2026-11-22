@@ -6,6 +6,7 @@ export type ClientMessage =
     | { type: "start", mode: RaceMode }
     | { type: "pong", id: string, clientTime: number }
     | { type: "keys", keys: { key: string, t: number }[] }
+    | { type: "rematch" }
 
 
 export type ServerMessage = 
@@ -17,6 +18,7 @@ export type ServerMessage =
     | { type: "ping", id: string }
     | { type: "carets", carets: { id: string, wordIndex: number, charIndex: number }[] }
     | { type: "standings", wpms: number[], you?: number }
+    | { type: "results", results: { name: string, wpm: number, accuracy: number }[] }
 
 export type KeyVerdict =
     | { ok: true,  time: number, clamped: boolean }
