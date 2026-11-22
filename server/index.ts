@@ -4,7 +4,7 @@ import { rooms, type Player, type Room, type SocketData } from "./lobby/rooms";
 import type { ServerWebSocket } from "bun";
 import { handlePong, startSync } from "./lobby/sync";
 import { DROP_ON, lag } from "./lobby/timing";
-import { handleKeys, handleRematch, handleStartRace } from "./race";
+import { endRace, handleKeys, handleRematch, handleStartRace } from "./race";
 
 
 const IDLE_MS  = 10 * 60 * 1000 
@@ -117,6 +117,8 @@ function handleCreateRoom(ws: ServerWebSocket<SocketData>, msg: Extract<ClientMe
     lastActivity: Date.now()
   };
 
+  const token = crypto.randomUUID()
+
   const thisPlayer: Player = {
     id: ws.data.playerId,
     name: name,
@@ -125,7 +127,8 @@ function handleCreateRoom(ws: ServerWebSocket<SocketData>, msg: Extract<ClientMe
     samples: [],
     syncAttempts: 0,
     keystrokes: [],
-    lastTime: 0
+    lastTime: 0,
+    token: token
   }
 
   room.players.set(ws.data.playerId, thisPlayer);
@@ -137,7 +140,7 @@ function handleCreateRoom(ws: ServerWebSocket<SocketData>, msg: Extract<ClientMe
 
   const players = playerMapping(room)
   
-  send(ws, { type: "joined", code: code, you: ws.data.playerId, hostId: ws.data.playerId, players: players });
+  send(ws, { type: "joined", token: token, code: code, you: ws.data.playerId, hostId: ws.data.playerId, players: players });
   startSync(thisPlayer)
 }
 
@@ -174,6 +177,39 @@ function handleJoinRoom(ws: ServerWebSocket<SocketData>, msg: Extract<ClientMess
     return;
   }
 
+  // Reclaim logic
+  if (msg.token && typeof msg.token === "string"){
+    const seat = Array.from(room.players.values()).find(p => p.token === msg.token)
+    if (!seat){
+      send(ws, { type: "error", message: "Invalid session" }) 
+      return;
+    }
+
+    const old = seat.ws
+    if (old !== ws){
+      old.data.roomCode = undefined
+      old.close()
+    }
+
+    seat.ws = ws
+    seat.sync = undefined
+    seat.lastTime = performance.now()
+    ws.data.playerId = seat.id          
+    ws.data.roomCode = code
+    ws.subscribe(roomTopic(code))
+
+    clearTimeout(seat.graceTimer)
+    seat.disconnected = false
+    broadcast(roomTopic(code), { type: "player_status", id: seat.id, name: name, status: "back" } )
+
+
+    const players = playerMapping(room)
+    send(ws, { type: "joined", code: code, token: seat.token, you: ws.data.playerId, hostId: room.hostId, players: players })
+    startSync(seat)
+    return;
+
+  }
+
   if (room.phase !== 'lobby') {
     send(ws, { type: "error", message: "race in progress" })
     return;
@@ -184,6 +220,8 @@ function handleJoinRoom(ws: ServerWebSocket<SocketData>, msg: Extract<ClientMess
     return;
   }
 
+  const token = crypto.randomUUID()
+
   const thisPlayer: Player = {
     id: ws.data.playerId,
     name: name,
@@ -192,7 +230,8 @@ function handleJoinRoom(ws: ServerWebSocket<SocketData>, msg: Extract<ClientMess
     samples: [],
     syncAttempts: 0,
     keystrokes: [],
-    lastTime: 0
+    lastTime: 0,
+    token: token
   }
 
   room.players.set(ws.data.playerId, thisPlayer)
@@ -202,7 +241,7 @@ function handleJoinRoom(ws: ServerWebSocket<SocketData>, msg: Extract<ClientMess
 
   const players = playerMapping(room)
 
-  send(ws, { type: "joined", code: code, you: ws.data.playerId, hostId: room.hostId, players: players });
+  send(ws, { type: "joined", code: code, token: token, you: ws.data.playerId, hostId: room.hostId, players: players });
   publish(ws, roomTopic(code), { type: "lobby_update", hostId: room.hostId, players: players })
   startSync(thisPlayer)
 
@@ -210,28 +249,54 @@ function handleJoinRoom(ws: ServerWebSocket<SocketData>, msg: Extract<ClientMess
 
 function handleLeaveRoom(ws: ServerWebSocket<SocketData>){
     const code = ws.data.roomCode
-
     if (!code) return;
 
     const room = rooms.get(code)
-
     if (!room) return;
 
-    room.players.delete(ws.data.playerId)
+    const player = room.players.get(ws.data.playerId)
+    if(!player || player.ws !== ws) return;
+
+    player.disconnected = true
+    broadcast(roomTopic(code), { type: "player_status", id: player.id, name: player.name, status: "disconnected" } )
+
+    const grace = room.phase === "countdown" || room.phase === "racing" ? 8000 : 30000
+
+    player.graceTimer = setTimeout(() => graceExpired(room, player), grace)
+}
+
+function graceExpired(room: Room, player: Player){
+  if (rooms.get(room.code) !== room) return;
+  if (!player.disconnected) return;
+
+  if(room.phase === "countdown" || room.phase === "racing"){
+    if (player.finishedAt !== undefined) return;
+
+    player.dnf = true
+    broadcast(roomTopic(room.code), { type: "player_status", id: player.id, name: player.name, status: "dnf" })
+
+    if(room.mode?.kind === "passage" && Array.from(room.players.values()).every(p => p.finishedAt !== undefined || p.dnf)){
+      endRace(room, room.code)
+    }
+  } else {
+    removePlayer(room, player)
+  }
+}
+
+function removePlayer(room: Room, player: Player){
+  room.players.delete(player.id)
 
     if (room.players.size === 0) {
         closeRoom(room.code, room)
         return;
     }
-
     
-
-    if (ws.data.playerId === room.hostId){
+    if (player.id === room.hostId){
         room.hostId = room.players.keys().next().value!
     }
 
     const players = playerMapping(room)
-    broadcast(roomTopic(code), { type: "lobby_update", hostId: room.hostId, players: players })
+    broadcast(roomTopic(room.code), { type: "lobby_update", hostId: room.hostId, players: players })
 }
 
 
@@ -300,7 +365,10 @@ function closeRoom(code: string, room: Room){
         send(player.ws, { type: "room_closed" })
         player.ws.data.roomCode = undefined
         player.ws.unsubscribe(roomTopic(code))
+        player.graceTimer = undefined
     }
 
     rooms.delete(code)
 }
+
+

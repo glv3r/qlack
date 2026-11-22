@@ -34,6 +34,10 @@ export type Player = {
     syncAttempts: number,
     state?: RaceState,
     finishedAt?: number
+    token: string
+    disconnected?: boolean,
+    dnf?: boolean
+    graceTimer?: Timer
 }
 
 export type Room = {

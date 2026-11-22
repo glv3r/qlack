@@ -2,7 +2,7 @@ import type { Player } from "./lobby/rooms";
 
 export type ClientMessage = 
     | { type: "create_room", name: string }
-    | { type: "join_room", code: string, name: string }
+    | { type: "join_room", code: string, token?: string, name: string }
     | { type: "start", mode: RaceMode }
     | { type: "pong", id: string, clientTime: number }
     | { type: "keys", keys: { key: string, t: number }[] }
@@ -10,7 +10,7 @@ export type ClientMessage =
 
 
 export type ServerMessage = 
-    | { type: "joined", code: string, you: string, hostId: string, players: {id: string, name: string}[] }
+    | { type: "joined", code: string, token: string, you: string, hostId: string, players: {id: string, name: string}[] }
     | { type: "countdown", seed: number, mode: RaceMode, startAt: number }
     | { type: "lobby_update", hostId: string, players: {id: string, name: string}[] }
     | { type: "error", message: string }
@@ -18,7 +18,8 @@ export type ServerMessage =
     | { type: "ping", id: string }
     | { type: "carets", carets: { id: string, wordIndex: number, charIndex: number }[] }
     | { type: "standings", wpms: number[], you?: number }
-    | { type: "results", results: { name: string, wpm: number, accuracy: number }[] }
+    | { type: "results", results: { name: string, wpm: number, accuracy: number, dnf: boolean }[] }
+    | { type: "player_status", id: string, name: string, status: "disconnected" | "back" | "dnf" }
 
 export type KeyVerdict =
     | { ok: true,  time: number, clamped: boolean }

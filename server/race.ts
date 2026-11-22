@@ -61,6 +61,7 @@ export function handleStartRace(ws: ServerWebSocket<SocketData>, msg: Extract<Cl
         p.keystrokes = []
         p.lastTime = startAt
         p.finishedAt = undefined
+        p.dnf = undefined
         // words is definitely generated so we can have the null bypass here
         p.state = initialState(room.words!) 
     });
@@ -128,6 +129,8 @@ export function handleKeys(ws: ServerWebSocket<SocketData>, msg: Extract<ClientM
 
     if (player?.finishedAt !== undefined) return;
 
+    if (player?.dnf) return;
+
     if (room.phase !== "racing") return;
 
     if (!player?.sync) return;
@@ -189,6 +192,11 @@ function isValidMode(m: unknown): m is RaceMode {
   );
 }
 
+function roundTo(value: number, decimals: number = 2): number {
+  const factor = 10 ** decimals;
+  return Math.round((value + Number.EPSILON) * factor) / factor;
+}
+
 function toKeystroke(key: string): { kind: "char", char: string} | { kind: "space" } | { kind: "backspace" } | null {
     if (key === " "){
         return { kind: "space" }
@@ -216,7 +224,7 @@ export function endRace(room: Room, code: string){
     const ruleset = room.mode?.kind === "timer" ? timerRuleset(room.mode.duration * 1000) : passageRuleset
     const now = performance.now()
 
-    const rows: { name: string, wpm: number, accuracy: number }[]  = []
+    const rows: { name: string, wpm: number, accuracy: number, dnf: boolean }[]  = []
     
     const words = room.words
     const startAt = room.startAt
@@ -232,15 +240,24 @@ export function endRace(room: Room, code: string){
             (p.finishedAt ?? now - startAt) 
 
         const s = stats(final, elapsed)
-        const row = { name: p.name, wpm: s.netWPM, accuracy: s.accuracy }
+        const row = { name: p.name, wpm: roundTo(s.netWPM, 2), accuracy: s.accuracy, dnf: p.dnf ?? false }
         rows.push(row)
     })
 
+    // separate into non-dnf and dnf rows
+    const dnfRows = rows.filter(r => r.dnf)
+    const nonDNFRows = rows.filter(r => !r.dnf)
+
     // Sort rows by wpm in desc. order
-    rows.sort((a, b) => b.wpm - a.wpm)
-    const updatedRows = rows.map((r, index) => ({
+    dnfRows.sort((a, b) => b.wpm - a.wpm)
+    nonDNFRows.sort((a, b) => b.wpm - a.wpm)
+
+    const ordered = [...nonDNFRows, ...dnfRows]
+
+    const updatedRows = ordered.map((r, index) => ({
         ...r,
-        rank: index + 1
+        rank: index + 1,
+
     }))
 
     broadcast(roomTopic(code), { type: "results", results: updatedRows })
