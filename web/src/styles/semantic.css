@@ -1,27 +1,46 @@
 /*
- * Semantic layer. Components use only these, never the raw --q-* tokens,
+ * Semantic layer. Components use only these, never the raw q-* tokens,
  * so the same component works in both registers.
  * Loud is the default; [data-register="quiet"] remaps everything to night.
  */
 :root {
-  --page: var(--q-paper);
-  --surface: var(--q-card);
-  --fg: var(--q-ink);
-  --fg-2: var(--q-ink-2);
-  --fg-muted: var(--q-ink-4);
-  --line: var(--q-ink);
-  --shadow-color: var(--q-ink);
-  --accent: var(--q-lime);
+  --page: var(--color-q-paper);
+  --surface: var(--color-q-card);
+  --fg: var(--color-q-ink);
+  --fg-2: var(--color-q-ink-2);
+  --fg-muted: var(--color-q-ink-4);
+  --line: var(--color-q-ink);
+  --line-on-fg: var(--color-q-ink);
+  --shadow-color: var(--color-q-ink);
+  --accent: var(--color-q-lime);
 }
 
 [data-register="quiet"] {
-  --page: var(--q-night);
-  --surface: var(--q-night-card);
-  --fg: var(--q-night-fg);
-  --fg-2: var(--q-night-fg-2);
-  --fg-muted: var(--q-night-fg-3);
-  --line: var(--q-night-fg);
-  --shadow-color: var(--q-night-shadow);
+  --page: var(--color-q-night);
+  --surface: var(--color-q-night-card);
+  --fg: var(--color-q-night-fg);
+  --fg-2: var(--color-q-night-fg-2);
+  --fg-muted: var(--color-q-night-fg-3);
+  --line: var(--color-q-night-fg);
+  --line-on-fg: var(--color-q-night);
+  --shadow-color: var(--color-q-night-shadow);
+}
+
+/*
+ * Expose the roles as utilities: bg-surface, text-fg, border-line, shadow-hard…
+ * "inline" makes the utility use var(--surface) directly, so it picks up
+ * whichever register the element sits in.
+ */
+@theme inline {
+  --color-page: var(--page);
+  --color-surface: var(--surface);
+  --color-fg: var(--fg);
+  --color-fg-2: var(--fg-2);
+  --color-fg-muted: var(--fg-muted);
+  --color-line: var(--line);
+  --color-line-on-fg: var(--line-on-fg);
+  --color-accent: var(--accent);
+  --shadow-hard: 6px 6px 0 var(--shadow-color);
 }
 
 /* Whatever sets a register also paints its own page and text. */
