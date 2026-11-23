@@ -1,0 +1,40 @@
+<div class="grid grid-cols-2 min-h-screen">
+  @for (register of registers; track register) {
+    <section [attr.data-register]="register" class="flex flex-col gap-10 p-page-gutter">
+      <h2 class="font-mono text-[13px] tracking-[0.1em] uppercase text-fg-muted">{{ register }}</h2>
+
+      <div class="flex flex-col gap-4">
+        <h3 class="font-mono text-[13px] tracking-[0.1em] uppercase text-fg-muted">Card</h3>
+        <app-card>Everyone types the same text. Best net WPM wins.</app-card>
+      </div>
+
+      <div class="flex flex-col gap-4">
+        <h3 class="font-mono text-[13px] tracking-[0.1em] uppercase text-fg-muted">Button</h3>
+        <div class="flex gap-7">
+          <button appButton variant="primary">Create room →</button>
+          <button appButton>Join</button>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-4">
+        <h3 class="font-mono text-[13px] tracking-[0.1em] uppercase text-fg-muted">Pill</h3>
+        <div class="flex flex-wrap gap-2">
+          <app-pill>Passage · medium</app-pill>
+          @for (p of players; track p.name) {
+            <app-pill [color]="p.color">{{ p.name }}</app-pill>
+          }
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-4">
+        <h3 class="font-mono text-[13px] tracking-[0.1em] uppercase text-fg-muted">Avatar</h3>
+        <div class="flex flex-wrap gap-4">
+          <app-avatar key="esc">•‿•</app-avatar>
+          @for (p of players; track p.name) {
+            <app-avatar [key]="p.key" [color]="p.color">•‿•</app-avatar>
+          }
+        </div>
+      </div>
+    </section>
+  }
+</div>

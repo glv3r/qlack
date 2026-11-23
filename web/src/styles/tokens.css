@@ -26,12 +26,15 @@
   --color-q-line-off: #b5b0a5;
   --color-q-avatar-off: #cfcac0;
 
-  /* Player palette (lime is also the brand accent) */
+  /* Player palette, one per racer (lime is also the brand accent) */
   --color-q-lime: #c6f432;
   --color-q-pink: #ff8fb8;
   --color-q-sky: #6cc6ff;
   --color-q-lilac: #b9a2ff;
   --color-q-orange: #ffb25b;
+  --color-q-mint: #5fe3b0;
+  --color-q-sun: #ffe14d;
+  --color-q-magenta: #ee7bf5;
 
   /* Quiet: night */
   --color-q-night: #151410;

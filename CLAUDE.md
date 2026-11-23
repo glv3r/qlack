@@ -17,9 +17,11 @@ Daniel is learning by building, in very small steps.
 
 ## Where things stand
 - **Phase 0–1 done:** engine (GLO-231), seeded words (GLO-232), rooms (GLO-233), clock sync (GLO-234), race loop (GLO-235), reconnection (GLO-236). The server is authoritative.
-- **Now: GLO-237, design tokens + brutalist components.** First Angular work in `web/`.
+- **Phase 2 started:** GLO-237 done. Angular 22 + Tailwind v4 in `web/` (branch `web`), tokens, semantic layer, fonts, primitives (Card, Button, Pill, Avatar) and the `/sheet` route.
+- **Next:** the next ticket in Linear.
 - **Carried forward:**
-  - browser determinism check for seeded words (the web app must import `@qlack/engine`)
+  - quiet cards use `radius-card` (16px); the design wants `radius-button` (12px) on night cards. Add when the race screen needs it.
+  - Avatar `size` input (picker 168px, rail 16px). Add when the first screen needs it.
   - reconnect UX: up to 3 attempts in 8 s, "Reconnecting…" frozen input, real Wi-Fi test
   - decide whether `start` is refused while a lobby player is disconnected
   - server refactor: `requireRoom(ws)` and `newPlayer(ws, name)` helpers; remove temporary logs
@@ -30,9 +32,11 @@ The source of truth is `web/design/tokens.json` and `web/design/README.md` (expo
 - **Every colour is a CSS variable.** No hardcoded colours in components.
 - **Fonts:** Familjen Grotesk (display/body), DM Mono (labels, numbers, codes), Roboto Mono (race word field only).
 - **Shadows** are hard, with no blur. Radii grow with element size.
-- **Open decision:** the ticket says an 8-colour player palette; the design system has 5. Settle this before the palette step.
+- **Player palette:** 8 colours, one per racer (added `q-mint`, `q-sun`, `q-magenta` in GLO-237).
+- **Styling:** Tailwind v4. Tokens live in `web/src/styles/tokens.css` (`@theme`, Tailwind defaults cleared); roles in `semantic.css` (`bg-surface`, `text-fg`, `border-line`…). Components use the roles; player colours use `playerFill` from `ui/player-color.ts`.
+- **Tooling:** Angular CLI needs Node ≥ 22.22 (nvm default is 22). Bun installs; Node runs `ng`.
 
-## GLO-237 plan (one step at a time)
+## GLO-237 plan (done)
 1. Scaffold Angular in `web/` (CSS, routing, no SSR). Add `web` to the workspaces and `@qlack/engine: workspace:*`.
 2. Tokens as CSS variables, plus a semantic layer (`--surface`, `--fg`, `--line`…) that `[data-register="quiet"]` remaps, so one component works in both registers.
 3. Fonts.

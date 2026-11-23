@@ -30,7 +30,7 @@ The voice is a friend running the group chat: short, cheeky, plain. Trash talk i
 ## Colour
 
 - **Paper and ink.** Loud screens sit on `q-paper` with `q-card` panels; everything is drawn in `q-ink`. Muted text steps down `q-ink-2` → `q-ink-4`; check each token's usage note before putting grey text on a player colour.
-- **Player palette.** Five colours: `q-lime`, `q-pink`, `q-sky`, `q-lilac`, `q-orange`. A racer's colour follows them from lobby row to rail avatar and caret to result card. Text on any player colour is `q-ink`.
+- **Player palette.** Eight colours, one per racer: `q-lime`, `q-pink`, `q-sky`, `q-lilac`, `q-orange`, `q-mint`, `q-sun`, `q-magenta`. A racer's colour follows them from lobby row to rail avatar and caret to result card. Text on any player colour is `q-ink`.
 - **Lime is also the brand accent** (`accent`): the wordmark bar, the primary button's shadow, your caret, your counter. Spend it only on "this is yours" and "this is the main action".
 - **Night.** The race uses `q-night` and `q-night-card`. Typed text `q-night-fg`, untyped words `q-night-fg-4`, small labels `q-night-fg-3`, body copy on night cards `q-night-fg-2`.
 - **Mistakes** are `q-error`, a muted red. Never a bright red, and only on the night surface.
