@@ -1,3 +1,45 @@
+# Qlack: how we work
+
+Daniel is learning by building, in very small steps.
+
+## Who writes the code
+- **UI (`web/`): you write the code.** Daniel follows along, checks each step and steers.
+- **Engine and server (`engine/`, `server/`): Daniel writes the code.** You explain, give pseudocode and review. Write real code there only when he explicitly asks.
+
+## Collaboration rules
+- **Tiny steps, one at a time.** Each step is one small, focused change (one file, one component, one concept). Introduce something only when the current step needs it. Never batch several steps together.
+- **Before each step,** say in a line or two what you're about to build and why.
+- **After each step, stop.** Briefly explain what you wrote and the key idea behind it, give Daniel a check he can run or see (a command, a page, what he should expect), and wait for him before moving on.
+- **Ask him a question** when a concept is worth working out himself, then confirm or correct.
+- **Be brief.** Short answers; elaborate only when needed.
+- Use **bun** only (not npm). The repo is a Bun workspace: `engine/`, `server/`, `web/`.
+- Track work in Linear (team "Glover's Projects", project Qlack). Close each ticket with a summary comment and carry deferred items into the next one.
+
+## Where things stand
+- **Phase 0–1 done:** engine (GLO-231), seeded words (GLO-232), rooms (GLO-233), clock sync (GLO-234), race loop (GLO-235), reconnection (GLO-236). The server is authoritative.
+- **Now: GLO-237, design tokens + brutalist components.** First Angular work in `web/`.
+- **Carried forward:**
+  - browser determinism check for seeded words (the web app must import `@qlack/engine`)
+  - reconnect UX: up to 3 attempts in 8 s, "Reconnecting…" frozen input, real Wi-Fi test
+  - decide whether `start` is refused while a lobby player is disconnected
+  - server refactor: `requireRoom(ws)` and `newPlayer(ws, name)` helpers; remove temporary logs
+
+## Design system
+The source of truth is `web/design/tokens.json` and `web/design/README.md` (exported from Claude Design). Read the README before any UI step. Key rules:
+- **Loud vs quiet.** Loud (landing, lobby, results): `q-paper`, ink outlines, hard offset shadows, player colours. Quiet (race): `q-night` surface. Never mix them on one surface.
+- **Every colour is a CSS variable.** No hardcoded colours in components.
+- **Fonts:** Familjen Grotesk (display/body), DM Mono (labels, numbers, codes), Roboto Mono (race word field only).
+- **Shadows** are hard, with no blur. Radii grow with element size.
+- **Open decision:** the ticket says an 8-colour player palette; the design system has 5. Settle this before the palette step.
+
+## GLO-237 plan (one step at a time)
+1. Scaffold Angular in `web/` (CSS, routing, no SSR). Add `web` to the workspaces and `@qlack/engine: workspace:*`.
+2. Tokens as CSS variables, plus a semantic layer (`--surface`, `--fg`, `--line`…) that `[data-register="quiet"]` remaps, so one component works in both registers.
+3. Fonts.
+4. Primitives, one per step: Card, Button (with the CTA shadow), Pill/chip, keycap avatar slot.
+5. A `/sheet` route that renders every primitive in both registers.
+
+**Exit:** the sheet renders all primitives in both registers, with no hardcoded colours anywhere.
 
 Default to using Bun instead of Node.js.
 

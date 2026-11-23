@@ -1,0 +1,32 @@
+/*
+ * Semantic layer. Components use only these, never the raw --q-* tokens,
+ * so the same component works in both registers.
+ * Loud is the default; [data-register="quiet"] remaps everything to night.
+ */
+:root {
+  --page: var(--q-paper);
+  --surface: var(--q-card);
+  --fg: var(--q-ink);
+  --fg-2: var(--q-ink-2);
+  --fg-muted: var(--q-ink-4);
+  --line: var(--q-ink);
+  --shadow-color: var(--q-ink);
+  --accent: var(--q-lime);
+}
+
+[data-register="quiet"] {
+  --page: var(--q-night);
+  --surface: var(--q-night-card);
+  --fg: var(--q-night-fg);
+  --fg-2: var(--q-night-fg-2);
+  --fg-muted: var(--q-night-fg-3);
+  --line: var(--q-night-fg);
+  --shadow-color: var(--q-night-shadow);
+}
+
+/* Whatever sets a register also paints its own page and text. */
+body,
+[data-register="quiet"] {
+  background: var(--page);
+  color: var(--fg);
+}

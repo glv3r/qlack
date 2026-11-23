@@ -1,0 +1,108 @@
+/*
+ * Raw design tokens, copied from design/tokens.json.
+ * Components should prefer the semantic layer (step 2b) over these.
+ */
+:root {
+  /* Loud: paper and ink */
+  --q-ink: #141310;
+  --q-paper: #f3efe6;
+  --q-card: #fffdf8;
+  --q-sunk: #e9e4d9;
+  --q-taken: #e6e1d6;
+  --q-ink-2: #3a372f;
+  --q-ink-3: #5a564d;
+  --q-ink-4: #6b665c;
+  --q-ink-5: #7a756b;
+  --q-ink-6: #8e897e;
+  --q-line-dashed: #a8a398;
+  --q-line-off: #b5b0a5;
+  --q-avatar-off: #cfcac0;
+
+  /* Player palette (lime is also the brand accent) */
+  --q-lime: #c6f432;
+  --q-pink: #ff8fb8;
+  --q-sky: #6cc6ff;
+  --q-lilac: #b9a2ff;
+  --q-orange: #ffb25b;
+
+  /* Quiet: night */
+  --q-night: #151410;
+  --q-night-card: #1d1b16;
+  --q-night-fg: #e8e3d6;
+  --q-night-fg-2: #a8a397;
+  --q-night-fg-3: #8c877c;
+  --q-night-fg-4: #6e6a60;
+  --q-night-fg-5: #4a463e;
+  --q-night-line: #3a372f;
+  --q-night-hair: #2c2a24;
+  --q-night-edge: #3e3a32;
+  --q-night-shadow: #4a463e;
+  --q-night-deep: #0a0907;
+  --q-error: #c9645a;
+
+  /* Spacing */
+  --space-1: 6px;
+  --space-2: 10px;
+  --space-3: 14px;
+  --space-4: 16px;
+  --space-5: 18px;
+  --space-6: 22px;
+  --space-7: 24px;
+  --space-8: 28px;
+  --space-9: 36px;
+  --space-10: 40px;
+  --space-11: 44px;
+  --space-12: 56px;
+  --space-13: 64px;
+  --space-14: 72px;
+  --page-gutter: 72px;
+  --race-gutter: 64px;
+  --frame-w: 1440px;
+  --frame-h: 900px;
+  --passage-w: 1152px;
+
+  /* Radii grow with the element */
+  --radius-tag: 6px;
+  --radius-rail: 8px;
+  --radius-input: 10px;
+  --radius-button: 12px;
+  --radius-row: 14px;
+  --radius-card: 16px;
+  --radius-hero: 20px;
+  --radius-pill: 999px;
+
+  /* Outline widths */
+  --border-hair: 2px;
+  --border-chip: 2.5px;
+  --border-base: 3px;
+  --border-hero: 4px;
+  --border-stamp: 5px;
+
+  /* Hard shadows: no blur, built from the colour tokens */
+  --shadow-xs: 4px 4px 0 var(--q-ink);
+  --shadow-sm: 5px 5px 0 var(--q-ink);
+  --shadow-md: 6px 6px 0 var(--q-ink);
+  --shadow-lg: 7px 7px 0 var(--q-ink);
+  --shadow-selected: 8px 8px 0 var(--q-ink);
+  --shadow-card: 10px 10px 0 var(--q-ink);
+  --shadow-hero: 14px 14px 0 var(--q-ink);
+  --shadow-cta: 6px 6px 0 var(--q-lime), 6px 6px 0 3px var(--q-ink);
+  --shadow-cta-xl: 7px 7px 0 var(--q-lime), 7px 7px 0 3px var(--q-ink);
+  --shadow-keycap: 0 5px 0 var(--q-ink);
+  --shadow-counter: 5px 5px 0 var(--q-lime);
+  --shadow-night: 6px 6px 0 var(--q-night-shadow);
+  --shadow-night-row: 8px 8px 0 var(--q-night-deep);
+  --shadow-revealed: 8px 8px 0 var(--q-paper);
+
+  /* Tilt, sparingly */
+  --tilt-sticker: 5deg;
+  --tilt-word: -2deg;
+  --tilt-winner: -1.5deg;
+  --tilt-countdown: -4deg;
+  --tilt-stamp: -12deg;
+
+  /* Font families (the fonts themselves load in step 3) */
+  --font-sans: "Familjen Grotesk", sans-serif;
+  --font-mono: "DM Mono", monospace;
+  --font-race: "Roboto Mono", monospace;
+}
