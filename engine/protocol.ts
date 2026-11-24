@@ -1,4 +1,5 @@
-import type { Player } from "./lobby/rooms";
+import type { AVATARS } from "./words";
+
 
 export type ClientMessage = 
     | { type: "create_room", name: string }
@@ -7,12 +8,13 @@ export type ClientMessage =
     | { type: "pong", id: string, clientTime: number }
     | { type: "keys", keys: { key: string, t: number }[] }
     | { type: "rematch" }
+    | { type: "pick_avatar", avatar: AvatarKey }
 
 
 export type ServerMessage = 
-    | { type: "joined", code: string, token: string, you: string, hostId: string, players: {id: string, name: string}[] }
+    | { type: "joined", code: string, token: string, you: string, hostId: string, players: PlayerInfo[] }
     | { type: "countdown", seed: number, mode: RaceMode, startAt: number }
-    | { type: "lobby_update", hostId: string, players: {id: string, name: string}[] }
+    | { type: "lobby_update", hostId: string, players: PlayerInfo[] }
     | { type: "error", message: string }
     | { type: "room_closed" }
     | { type: "ping", id: string }
@@ -20,6 +22,7 @@ export type ServerMessage =
     | { type: "standings", wpms: number[], you?: number }
     | { type: "results", results: { name: string, wpm: number, accuracy: number, dnf: boolean }[] }
     | { type: "player_status", id: string, name: string, status: "disconnected" | "back" | "dnf" }
+    
 
 export type KeyVerdict =
     | { ok: true,  time: number, clamped: boolean }
@@ -27,5 +30,12 @@ export type KeyVerdict =
 
 export type RaceMode =
   | { kind: "timer",   duration: 15 | 30 | 60 }
-  | { kind: "passage", words: 25 | 50 }
+  | { kind: "passage", words: 25 | 50 | 100 }
 
+export type AvatarKey = (typeof AVATARS)[number];
+
+export type PlayerInfo = {
+    id: string,
+    name: string,
+    avatar?: AvatarKey
+}

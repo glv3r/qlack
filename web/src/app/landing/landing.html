@@ -1,0 +1,26 @@
+<main class="min-h-screen p-page-gutter">
+  <div class="flex flex-col gap-10 max-w-[560px]">
+    <div class="flex flex-col gap-6">
+      <h1 class="font-bold text-[96px] leading-[0.92] tracking-[-0.045em]">Type fast. Talk trash.</h1>
+      <p class="text-[24px] leading-[1.4] text-fg-2">Pick a name, share a code, go.</p>
+    </div>
+
+    <label class="flex flex-col gap-2">
+      <span class="font-mono text-[13px] tracking-widest uppercase text-fg-2">Your name</span>
+      <input appInput id="name" name="name" placeholder="sam" maxlength="16" [(ngModel)]="name" />
+    </label>
+
+    <button appButton variant="primary" class="self-start" [disabled]="!name().trim()" (click)="create()">
+      Create room →
+    </button>
+
+    <div class="flex flex-col gap-2">
+      <span class="font-mono text-[13px] tracking-widest uppercase text-fg-2">Or join with a code</span>
+      <div class="flex gap-7 items-center">
+        <input appInput variant="code" id="code" name="code" placeholder="Q7KX" maxlength="4" class="w-[160px]"
+          aria-label="Room code" [(ngModel)]="code" />
+        <button appButton [disabled]="!name().trim() || code().length < 4" (click)="join()">Join</button>
+      </div>
+    </div>
+  </div>
+</main>

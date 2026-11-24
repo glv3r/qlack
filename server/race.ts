@@ -1,9 +1,8 @@
 import { broadcast, send } from "./messages";
 import { type Room, type SocketData, rooms } from "./lobby/rooms";
 import type { ServerWebSocket } from "bun";
-import type { ClientMessage, RaceMode } from "./protocol";
 import { checkKey } from "./lobby/timing";
-import { applyKey, generateWords, initialState, passageRuleset, replay, stats, timerRuleset, type Keystroke } from "@qlack/engine";
+import { applyKey, generateWords, initialState, passageRuleset, replay, stats, timerRuleset, type ClientMessage, type Keystroke, type RaceMode } from "@qlack/engine";
 import { playerMapping, roomTopic } from ".";
 import { startSync } from "./lobby/sync";
 
@@ -188,7 +187,7 @@ function isValidMode(m: unknown): m is RaceMode {
 
   return (
     (mode.kind === "timer" && [15, 30, 60].includes(mode.duration as number)) ||
-    (mode.kind === "passage" && [25, 50].includes(mode.words as number))
+    (mode.kind === "passage" && [25, 50, 100].includes(mode.words as number))
   );
 }
 

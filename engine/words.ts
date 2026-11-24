@@ -20,3 +20,5 @@ export const WORDS = [
   "lead", "system", "set", "order", "eye", "plan", "run", "keep", "face", "fact",
   "group", "play", "stand", "increase", "early", "course", "change", "help", "line", "city",
 ] as const;
+
+export const AVATARS = ["esc","enter","bksp","tab","shift","caps","space","ctrl","alt","del","fn","?"] as const

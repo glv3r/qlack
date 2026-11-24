@@ -1,8 +1,8 @@
 import type { ServerWebSocket } from "bun";
 import type { SocketData } from "./lobby/rooms";
-import type { ServerMessage } from "./protocol";
 import { server } from ".";
 import { lag } from "./lobby/timing";
+import type { ServerMessage } from "@qlack/engine";
 
 
 export function send(ws: ServerWebSocket<SocketData>, msg: ServerMessage) {

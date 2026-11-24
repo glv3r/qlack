@@ -65,5 +65,5 @@ test("garbage is rejected as bad json", async () => {
 
 test("a valid create_room is accepted without an error", async () => {
     const reply = await send(JSON.stringify({ type: "create_room", name: "dan" }));
-    expect(reply).toBeNull();
+    expect(reply).toMatchObject({ type: "joined", players: [{ name: "dan" }] });
 });

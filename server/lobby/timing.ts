@@ -1,4 +1,4 @@
-import type { KeyVerdict } from "../protocol";
+import type { KeyVerdict } from "@qlack/engine";
 import type { ClockSync, Player, SocketData } from "./rooms";
 import type { ServerWebSocket } from "bun";
 

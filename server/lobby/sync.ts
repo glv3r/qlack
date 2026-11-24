@@ -10,9 +10,9 @@
 
 
 import { send } from "../messages";
-import type { ClientMessage, ServerMessage } from "../protocol";
 import { rooms, type Player, type SocketData } from "../lobby/rooms";
 import type { ServerWebSocket } from "bun";
+import type { ClientMessage } from "@qlack/engine";
 
 export function startSync(player: Player){
     player.pending.clear()

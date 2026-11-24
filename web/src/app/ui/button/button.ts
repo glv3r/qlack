@@ -12,9 +12,12 @@ const classes =
   'data-[variant=primary]:[--btn-shadow:var(--accent)] data-[variant=primary]:[--btn-ring:var(--border-base)] ' +
   'shadow-[var(--offset)_var(--offset)_0_var(--btn-shadow),var(--offset)_var(--offset)_0_var(--btn-ring)_var(--line)] ' +
   // Hover lifts 2px; the bigger offset keeps the shadow where it was.
-  '[--offset:6px] hover:[--offset:8px] hover:-translate-[2px] ' +
+  // "enabled:" means a disabled button neither lifts nor presses.
+  '[--offset:6px] enabled:hover:[--offset:8px] enabled:hover:-translate-[2px] ' +
   // Press into the shadow.
-  'active:translate-[6px] active:shadow-none ' +
+  'enabled:active:translate-[6px] enabled:active:shadow-none ' +
+  // Disabled: faded, same shape. The design has no disabled spec yet.
+  'disabled:opacity-50 disabled:cursor-not-allowed ' +
   'transition-[translate,box-shadow] duration-80 motion-reduce:transition-none ' +
   'focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-line';
 

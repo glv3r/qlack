@@ -2,13 +2,14 @@ import { Component } from '@angular/core';
 import { Avatar } from '../ui/avatar/avatar';
 import { Button } from '../ui/button/button';
 import { Card } from '../ui/card/card';
+import { Input } from '../ui/input/input';
 import { Pill } from '../ui/pill/pill';
 import { PlayerColor } from '../ui/player-color';
 
 // Every primitive, rendered once per register.
 @Component({
   selector: 'app-sheet',
-  imports: [Avatar, Button, Card, Pill],
+  imports: [Avatar, Button, Card, Input, Pill],
   templateUrl: './sheet.html',
 })
 export class Sheet {

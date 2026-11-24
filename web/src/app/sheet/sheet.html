@@ -17,6 +17,20 @@
       </div>
 
       <div class="flex flex-col gap-4">
+        <h3 class="font-mono text-[13px] tracking-[0.1em] uppercase text-fg-muted">Input</h3>
+        <div class="flex gap-7">
+          <label class="flex flex-col gap-2 flex-1">
+            <span class="font-mono text-[13px] tracking-[0.1em] uppercase text-fg-2">Your name</span>
+            <input appInput placeholder="sam" />
+          </label>
+          <label class="flex flex-col gap-2 w-[160px]">
+            <span class="font-mono text-[13px] tracking-[0.1em] uppercase text-fg-2">Room code</span>
+            <input appInput variant="code" placeholder="Q7KX" maxlength="4" />
+          </label>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-4">
         <h3 class="font-mono text-[13px] tracking-[0.1em] uppercase text-fg-muted">Pill</h3>
         <div class="flex flex-wrap gap-2">
           <app-pill>Passage · medium</app-pill>

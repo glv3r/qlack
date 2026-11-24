@@ -1,10 +1,10 @@
 import { broadcast, publish, send } from "./messages";
-import type { ClientMessage } from "./protocol";
-import { rooms, type Player, type Room, type SocketData } from "./lobby/rooms";
 import type { ServerWebSocket } from "bun";
 import { handlePong, startSync } from "./lobby/sync";
 import { DROP_ON, lag } from "./lobby/timing";
 import { endRace, handleKeys, handleRematch, handleStartRace } from "./race";
+import { AVATARS, type ClientMessage, type PlayerInfo } from "@qlack/engine";
+import { rooms, type Player, type Room, type SocketData } from "./lobby/rooms";
 
 
 const IDLE_MS  = 10 * 60 * 1000 
@@ -64,10 +64,11 @@ export function roomTopic(code: string) {
   return "Room: " + code;
 }
 
-export function playerMapping(r: Room): {id: string, name: string}[] {
+export function playerMapping(r: Room): PlayerInfo[] {
     return [...r.players.values()].map((p) => ({
         id: p.id,
         name: p.name,
+        avatar: p.avatar 
     }));
 }
 
@@ -247,6 +248,50 @@ function handleJoinRoom(ws: ServerWebSocket<SocketData>, msg: Extract<ClientMess
 
 }
 
+function handlePickAvatar(ws: ServerWebSocket<SocketData>, msg: Extract<ClientMessage, { type: "pick_avatar" }>){
+   const code = ws.data.roomCode
+    if (!code) return;
+
+    const room = rooms.get(code)
+    if (!room) {
+      send(ws, { type: "error", message: "You're not in a room" })
+      console.log("You're not in a room")
+      return;
+    }
+
+    if (room.phase !== "lobby"){
+      send(ws, { type: "error", message: "Room not in lobby" })
+      console.log("Room not in lobby")
+      return;
+    }
+
+    // Avatar is in the global array of avatars
+    const isMessageInAvatar = AVATARS.includes(msg.avatar)
+    if (!isMessageInAvatar){
+      send(ws, { type: "error", message: `Unknown avatar` })
+      console.log("Error: Unknown avatar.")
+      return;
+    }
+
+    // Another player in the room has it
+    const owner = [...room.players.values()].find(p => p.avatar === msg.avatar);
+    if (owner && owner !== room.players.get(ws.data.playerId)){
+      send(ws, { type: "error", message: `Avatar taken by: ${owner?.name}` })
+      return;
+    }
+    
+
+    const player = room.players.get(ws.data.playerId)
+    if(!player) return;
+
+    
+    player.avatar = msg.avatar
+    const players = playerMapping(room)
+    
+    broadcast(roomTopic(code), { type: "lobby_update", hostId: room.hostId, players:  players })
+}
+
+
 function handleLeaveRoom(ws: ServerWebSocket<SocketData>){
     const code = ws.data.roomCode
     if (!code) return;
@@ -352,11 +397,16 @@ function handleMessage(ws: ServerWebSocket<SocketData>, raw: string | Buffer<Arr
         case "rematch":
             handleRematch(ws, msg);
             break;
+        case "pick_avatar":
+            handlePickAvatar(ws, msg);
+            break;
 
         default:
             send(ws, { type: "error", message: "unknown type" });
       }
 }
+
+
 
 function closeRoom(code: string, room: Room){
   clearInterval(room.tick)

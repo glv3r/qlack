@@ -1,6 +1,5 @@
 import type { ServerWebSocket } from "bun";
-import type { RaceMode } from "../protocol";
-import type { Keystroke, RaceState } from "@qlack/engine";
+import type { AvatarKey, Keystroke, RaceState, RaceMode } from "@qlack/engine";
 
 export const rooms = new Map<string, Room>()
 
@@ -37,7 +36,8 @@ export type Player = {
     token: string
     disconnected?: boolean,
     dnf?: boolean
-    graceTimer?: Timer
+    graceTimer?: Timer,
+    avatar?: AvatarKey
 }
 
 export type Room = {
